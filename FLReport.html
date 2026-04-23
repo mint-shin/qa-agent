@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FL 리포트 v1 (FLReport) — 풀스택 QA 리포트</title>
+<style>
+:root {
+  --primary: #1F3864;
+  --secondary: #2E74B5;
+  --accent: #9732FC;
+  --border: #BFBFBF;
+  --bg-code: #F5F5F5;
+  --bg-good: #E2EFDA;
+  --bg-warn: #FFF2CC;
+  --bg-bad: #FCE4D6;
+  --bg-critical: #F8CBAD;
+  --bg-muted: #E7E6E6;
+  --text: #222;
+  --muted: #555;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: 'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR','Helvetica Neue',Arial,sans-serif;
+  color: var(--text);
+  line-height: 1.65;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+  background: #fff;
+}
+h1 { font-size: 28px; color: var(--primary); border-bottom: 3px solid var(--primary); padding-bottom: 8px; margin-top: 0; }
+h2 { font-size: 22px; color: var(--primary); margin-top: 36px; border-left: 5px solid var(--secondary); padding-left: 10px; }
+h3 { font-size: 18px; color: var(--secondary); margin-top: 24px; }
+h4 { font-size: 16px; color: var(--text); margin-top: 18px; }
+p { margin: 10px 0; }
+ul, ol { padding-left: 22px; }
+li { margin: 6px 0; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+th { background: var(--bg-muted); font-weight: 700; }
+tr.good td { background: var(--bg-good); }
+tr.warn td { background: var(--bg-warn); }
+tr.bad td { background: var(--bg-bad); }
+tr.critical td { background: var(--bg-critical); }
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+}
+.badge.good { background: #70AD47; }
+.badge.warn { background: #ED7D31; color: #fff; }
+.badge.bad  { background: #C00000; }
+.badge.critical { background: #833C0C; }
+.badge.muted { background: #7F7F7F; }
+.summary-box {
+  background: var(--bg-muted);
+  border-left: 5px solid var(--secondary);
+  padding: 14px 18px;
+  margin: 12px 0 24px;
+  border-radius: 4px;
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+.meta b { color: var(--text); }
+.back {
+  display: inline-block;
+  margin-bottom: 20px;
+  color: var(--secondary);
+  text-decoration: none;
+  font-size: 14px;
+}
+.back::before { content: '← '; }
+.toc { background: #f7f9fc; padding: 14px 20px; border-radius: 6px; border: 1px solid #e0e5ec; margin: 18px 0 26px; }
+.toc ul { margin: 0; padding-left: 20px; }
+.toc a { color: var(--secondary); text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+.bug {
+  border-left: 5px solid #ED7D31;
+  padding: 12px 16px;
+  margin: 14px 0;
+  background: #FFFBF5;
+  border-radius: 4px;
+}
+.bug.critical { border-color: #833C0C; background: #FBEDE3; }
+.bug.warning { border-color: #ED7D31; background: #FFFBF5; }
+.bug.improvement { border-color: #7F7F7F; background: #F8F8F8; }
+.bug h4 { margin: 0 0 6px; }
+.bug .fix { margin-top: 6px; font-size: 14px; color: var(--muted); }
+.bug .fix b { color: #70AD47; }
+@media print {
+  body { max-width: none; padding: 20px; }
+  a { color: var(--text); text-decoration: none; }
+  .back { display: none; }
+}
+</style>
+</head>
+<body>
+<a href="./index.html" class="back">전체 목록으로 돌아가기</a>
+
+<h1>FL 리포트 v1 (FLReport)</h1>
+<div class="meta">
+  <span><b>카테고리:</b> 리포트</span>
+  <span><b>적용 범위:</b> 한국, 일본</span>
+  <span><b>대상:</b> FL 수업 완료자</span>
+  <span><b>데이터:</b> AI 분석 결과 + 수업 메타데이터</span>
+</div>
+
+<div class="summary-box">
+  <b>개요:</b> 1:1 수업 후 AI 상담 연계 9단계 인터랙티브 리포트<br/>
+  무료체험 또는 1:1 수업 완료 후 사용자에게 제공되는 9단계 AI 기반 학습 리포트입니다. 5개의 리포트 페이지와 4개의 AI 채팅 단계가 교차로 구성됩니다.
+</div>
+
+<div class="toc">
+  <b>목차</b>
+  <ul>
+    <li><a href="#features">1. 주요 기능</a></li>
+    <li><a href="#data-model">2. 데이터 모델</a></li>
+    <li><a href="#cross-ref">3. 크로스레퍼런스 (저장소별 구현 상태)</a></li>
+    <li><a href="#bugs">4. 발견된 이슈</a></li>
+    <li><a href="#test-cases">5. 테스트 케이스</a></li>
+    <li><a href="#roadmap">6. 권장 로드맵</a></li>
+  </ul>
+</div>
+
+<h2 id="features">1. 주요 기능</h2>
+<ul>
+<li>9단계(레벨/잠재력/진단/강점/준비 + AI 4) 스텝 진행</li>
+<li>사용자 입력 기반 AI 대화 전환 (메시지 센터 → 채팅 말풍선)</li>
+<li>SVG 레이더차트 애니메이션 (5영역)</li>
+<li>프로그레스 세그먼트 네비게이션</li>
+<li>스크롤 페이드 인디케이터</li>
+</ul>
+
+<h2 id="data-model">2. 데이터 모델</h2>
+<table>
+  <thead><tr><th>필드</th><th>설명</th></tr></thead>
+  <tbody>
+    <tr><td><code>aiState</code></td><td>seen Set, chatHistory Array</td></tr>
+<tr><td><code>STEPS</code></td><td>9개 페이지 정의 (type, render, ai)</td></tr>
+<tr><td><code>userMetadata</code></td><td>사용자명, 수강시간, 발화 단어 수</td></tr>
+  </tbody>
+</table>
+
+<h2 id="cross-ref">3. 크로스레퍼런스 — 저장소별 구현 상태</h2>
+<p>프로토타입의 기획을 기준으로, 실제 저장소에 해당 기능이 구현되어 있는지 조사한 결과입니다.</p>
+<table>
+  <thead><tr><th>저장소</th><th>상태</th><th>비고</th></tr></thead>
+  <tbody>
+    <tr><td><b>Uphone3_front</b></td><td><span class="badge bad">없음</span></td><td>신규</td></tr>
+<tr><td><b>uphone3_web</b></td><td><span class="badge warn">부분</span></td><td>FreeLessonComplete 리포트 기본 구조 존재</td></tr>
+<tr><td><b>uphone3_api</b></td><td><span class="badge bad">없음</span></td><td>AI 피드백 데이터 필요</td></tr>
+<tr><td><b>uphone3_lms</b></td><td><span class="badge bad">없음</span></td><td>AI 엔진 연동 필요</td></tr>
+<tr><td><b>Uphone3_android</b></td><td><span class="badge bad">없음</span></td><td>WebView</td></tr>
+<tr><td><b>uphone3_iOS</b></td><td><span class="badge bad">없음</span></td><td>WebView</td></tr>
+  </tbody>
+</table>
+
+<h2 id="bugs">4. 발견된 이슈</h2>
+
+    <div class="bug critical">
+      <h4><span class="badge critical">CRITICAL</span> 외부 이미지 URL 의존 (raw.githubusercontent.com)</h4>
+      <p>프로토타입에서 GitHub Raw URL 사용 — 프로덕션에서는 속도/정책 이슈 발생.</p>
+      <p class="fix"><b>권장 수정:</b> CDN(CloudFront, 사내 이미지 서버)으로 전환 + asset 경로 통일.</p>
+    </div>
+
+    <div class="bug warning">
+      <h4><span class="badge warn">WARNING</span> 타이머/애니메이션 클린업 미흡</h4>
+      <p>페이지 전환 시 setTimeout/requestAnimationFrame 정리 누락 — 메모리 누수 가능.</p>
+      <p class="fix"><b>권장 수정:</b> useEffect return 절에서 clearTimeout, cancelAnimationFrame 처리.</p>
+    </div>
+
+    <div class="bug improvement">
+      <h4><span class="badge muted">IMPROVEMENT</span> 메타데이터 하드코딩 (사용자명/분수/단어수)</h4>
+      <p>프로토타입 단계라 고정값 사용 중.</p>
+      <p class="fix"><b>권장 수정:</b> props 또는 React Query로 API 연동.</p>
+    </div>
+
+<h2 id="test-cases">5. 테스트 케이스</h2>
+<table>
+  <thead><tr><th>ID</th><th>케이스</th><th>기대 결과</th></tr></thead>
+  <tbody>
+    <tr><td><b>TC-01</b></td><td>1→2 전환</td><td>AI 센터 → 채팅 말풍선 애니메이션 정상</td></tr>
+<tr><td><b>TC-02</b></td><td>레이더차트 렌더</td><td>SVG 1.1초 easing 애니메이션 완료</td></tr>
+<tr><td><b>TC-03</b></td><td>AI 입력창 포커스</td><td>자동 focus + 키보드 레이아웃 밀림</td></tr>
+<tr><td><b>TC-04</b></td><td>이전 단계 재방문</td><td>채팅 이력 유지 + 추가 입력 가능</td></tr>
+<tr><td><b>TC-05</b></td><td>마지막 단계</td><td>[확인] 클릭 시 홈 이동</td></tr>
+  </tbody>
+</table>
+
+<h2 id="roadmap">6. 권장 로드맵</h2>
+<table>
+  <thead><tr><th>단계</th><th>작업</th></tr></thead>
+  <tbody>
+    <tr><td><b>1주차</b></td><td>이미지 CDN 전환</td></tr>
+<tr><td><b>2주차</b></td><td>AI API 연동 + 메타데이터 실데이터화</td></tr>
+<tr><td><b>3주차</b></td><td>성능/접근성 QA</td></tr>
+  </tbody>
+</table>
+
+<p style="margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:10px">
+문서 버전: v1 · 생성일: 2026-04-23 · Claude 자동 생성
+</p>
+</body>
+</html>

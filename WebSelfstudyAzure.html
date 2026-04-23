@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>웹 스스로학습 Azure 발음평가 (WebSelfstudyAzure) — 풀스택 QA 리포트</title>
+<style>
+:root {
+  --primary: #1F3864;
+  --secondary: #2E74B5;
+  --accent: #9732FC;
+  --border: #BFBFBF;
+  --bg-code: #F5F5F5;
+  --bg-good: #E2EFDA;
+  --bg-warn: #FFF2CC;
+  --bg-bad: #FCE4D6;
+  --bg-critical: #F8CBAD;
+  --bg-muted: #E7E6E6;
+  --text: #222;
+  --muted: #555;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: 'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR','Helvetica Neue',Arial,sans-serif;
+  color: var(--text);
+  line-height: 1.65;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+  background: #fff;
+}
+h1 { font-size: 28px; color: var(--primary); border-bottom: 3px solid var(--primary); padding-bottom: 8px; margin-top: 0; }
+h2 { font-size: 22px; color: var(--primary); margin-top: 36px; border-left: 5px solid var(--secondary); padding-left: 10px; }
+h3 { font-size: 18px; color: var(--secondary); margin-top: 24px; }
+h4 { font-size: 16px; color: var(--text); margin-top: 18px; }
+p { margin: 10px 0; }
+ul, ol { padding-left: 22px; }
+li { margin: 6px 0; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+th { background: var(--bg-muted); font-weight: 700; }
+tr.good td { background: var(--bg-good); }
+tr.warn td { background: var(--bg-warn); }
+tr.bad td { background: var(--bg-bad); }
+tr.critical td { background: var(--bg-critical); }
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+}
+.badge.good { background: #70AD47; }
+.badge.warn { background: #ED7D31; color: #fff; }
+.badge.bad  { background: #C00000; }
+.badge.critical { background: #833C0C; }
+.badge.muted { background: #7F7F7F; }
+.summary-box {
+  background: var(--bg-muted);
+  border-left: 5px solid var(--secondary);
+  padding: 14px 18px;
+  margin: 12px 0 24px;
+  border-radius: 4px;
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+.meta b { color: var(--text); }
+.back {
+  display: inline-block;
+  margin-bottom: 20px;
+  color: var(--secondary);
+  text-decoration: none;
+  font-size: 14px;
+}
+.back::before { content: '← '; }
+.toc { background: #f7f9fc; padding: 14px 20px; border-radius: 6px; border: 1px solid #e0e5ec; margin: 18px 0 26px; }
+.toc ul { margin: 0; padding-left: 20px; }
+.toc a { color: var(--secondary); text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+.bug {
+  border-left: 5px solid #ED7D31;
+  padding: 12px 16px;
+  margin: 14px 0;
+  background: #FFFBF5;
+  border-radius: 4px;
+}
+.bug.critical { border-color: #833C0C; background: #FBEDE3; }
+.bug.warning { border-color: #ED7D31; background: #FFFBF5; }
+.bug.improvement { border-color: #7F7F7F; background: #F8F8F8; }
+.bug h4 { margin: 0 0 6px; }
+.bug .fix { margin-top: 6px; font-size: 14px; color: var(--muted); }
+.bug .fix b { color: #70AD47; }
+@media print {
+  body { max-width: none; padding: 20px; }
+  a { color: var(--text); text-decoration: none; }
+  .back { display: none; }
+}
+</style>
+</head>
+<body>
+<a href="./index.html" class="back">전체 목록으로 돌아가기</a>
+
+<h1>웹 스스로학습 Azure 발음평가 (WebSelfstudyAzure)</h1>
+<div class="meta">
+  <span><b>카테고리:</b> 학습</span>
+  <span><b>적용 범위:</b> 한국, 일본</span>
+  <span><b>대상:</b> 웹 강의실 스스로학습 사용자</span>
+  <span><b>데이터:</b> Azure 발음 평가 결과</span>
+</div>
+
+<div class="summary-box">
+  <b>개요:</b> Azure 기반 발음 점수 + 4메트릭 시각 피드백<br/>
+  웹 강의실 스스로학습의 Say-the-Sentence 단계에서 사용자 녹음을 Azure Speech Services로 평가하고 점수/메트릭/단어별 색상 코딩/음절 분석을 제공합니다.
+</div>
+
+<div class="toc">
+  <b>목차</b>
+  <ul>
+    <li><a href="#features">1. 주요 기능</a></li>
+    <li><a href="#data-model">2. 데이터 모델</a></li>
+    <li><a href="#cross-ref">3. 크로스레퍼런스 (저장소별 구현 상태)</a></li>
+    <li><a href="#bugs">4. 발견된 이슈</a></li>
+    <li><a href="#test-cases">5. 테스트 케이스</a></li>
+    <li><a href="#roadmap">6. 권장 로드맵</a></li>
+  </ul>
+</div>
+
+<h2 id="features">1. 주요 기능</h2>
+<ul>
+<li>문장 재생 + 사용자 녹음 + 점수 피드백</li>
+<li>4메트릭 프로그레스 바 (정확도/유창성/완성도/운율)</li>
+<li>단어별 색상 코딩 (Black/Orange/Red)</li>
+<li>79점 이하 음절 분석 툴팁</li>
+<li>내 발음 듣기 재생</li>
+</ul>
+
+<h2 id="data-model">2. 데이터 모델</h2>
+<table>
+  <thead><tr><th>필드</th><th>설명</th></tr></thead>
+  <tbody>
+    <tr><td><code>pronunciationScore</code></td><td>0~100</td></tr>
+<tr><td><code>grade</code></td><td>A+/A/A-/B+/B/B-/C+/C 8단계</td></tr>
+<tr><td><code>metrics</code></td><td>정확도/유창성/완성도/운율 (0~100)</td></tr>
+<tr><td><code>words[]</code></td><td>text, score, syllables[]</td></tr>
+  </tbody>
+</table>
+
+<h2 id="cross-ref">3. 크로스레퍼런스 — 저장소별 구현 상태</h2>
+<p>프로토타입의 기획을 기준으로, 실제 저장소에 해당 기능이 구현되어 있는지 조사한 결과입니다.</p>
+<table>
+  <thead><tr><th>저장소</th><th>상태</th><th>비고</th></tr></thead>
+  <tbody>
+    <tr><td><b>Uphone3_front</b></td><td><span class="badge bad">없음</span></td><td>앱 WebView 에는 별도 발음평가 로직 있음</td></tr>
+<tr><td><b>uphone3_web</b></td><td><span class="badge bad">없음</span></td><td>신규 스크린</td></tr>
+<tr><td><b>uphone3_api</b></td><td><span class="badge bad">없음</span></td><td>Azure API 프록시 필요</td></tr>
+<tr><td><b>uphone3_lms</b></td><td><span class="badge warn">부분</span></td><td>스스로학습 콘텐츠 메타 존재</td></tr>
+<tr><td><b>Uphone3_android</b></td><td><span class="badge bad">없음</span></td><td>웹 전용</td></tr>
+<tr><td><b>uphone3_iOS</b></td><td><span class="badge bad">없음</span></td><td>웹 전용</td></tr>
+  </tbody>
+</table>
+
+<h2 id="bugs">4. 발견된 이슈</h2>
+
+    <div class="bug critical">
+      <h4><span class="badge critical">CRITICAL</span> 음절 툴팁 위치 계산 불안정 (스크롤 오버플로우)</h4>
+      <p>스크롤 영역에서 툴팁이 뷰포트 밖으로 벗어나는 케이스 다수.</p>
+      <p class="fix"><b>권장 수정:</b> Popper/Floating UI 적용 + flip/shift middleware.</p>
+    </div>
+
+    <div class="bug warning">
+      <h4><span class="badge warn">WARNING</span> 0~49점 등급 정의 중복 (C+)</h4>
+      <p>스펙: C+, 코드: 0~49도 C+ 로 동일 매핑 — 세분화 필요.</p>
+      <p class="fix"><b>권장 수정:</b> 0~40 C, 41~59 C+ 로 분리.</p>
+    </div>
+
+    <div class="bug improvement">
+      <h4><span class="badge muted">IMPROVEMENT</span> 번역 아이콘 경로 하드코딩</h4>
+      <p>/assets/trial-smart-waiting/ 경로가 다른 프로토타입 디렉토리 참조 중.</p>
+      <p class="fix"><b>권장 수정:</b> 공용 assets 폴더로 이동.</p>
+    </div>
+
+<h2 id="test-cases">5. 테스트 케이스</h2>
+<table>
+  <thead><tr><th>ID</th><th>케이스</th><th>기대 결과</th></tr></thead>
+  <tbody>
+    <tr><td><b>TC-01</b></td><td>녹음 전 말풍선</td><td>"따라 읽어보세요!" 말풍선 노출</td></tr>
+<tr><td><b>TC-02</b></td><td>85점 이상 녹음</td><td>A+ + 4메트릭 바 Slide-up 애니메이션</td></tr>
+<tr><td><b>TC-03</b></td><td>55점 단어 클릭</td><td>음절 분석 툴팁 표시</td></tr>
+<tr><td><b>TC-04</b></td><td>음절 0점</td><td>"안 들렸어요" + Red 테두리</td></tr>
+<tr><td><b>TC-05</b></td><td>내 발음 듣기</td><td>사용자 녹음 재생 성공</td></tr>
+  </tbody>
+</table>
+
+<h2 id="roadmap">6. 권장 로드맵</h2>
+<table>
+  <thead><tr><th>단계</th><th>작업</th></tr></thead>
+  <tbody>
+    <tr><td><b>1주차</b></td><td>Floating UI 적용 + 등급 분리</td></tr>
+<tr><td><b>2주차</b></td><td>Azure API 프록시 백엔드 구현</td></tr>
+<tr><td><b>3주차</b></td><td>저사양 디바이스 녹음/재생 QA</td></tr>
+  </tbody>
+</table>
+
+<p style="margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:10px">
+문서 버전: v1 · 생성일: 2026-04-23 · Claude 자동 생성
+</p>
+</body>
+</html>

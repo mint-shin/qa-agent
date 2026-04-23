@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>무료체험 결석자 재신청 (TrialRebooking) — 풀스택 QA 리포트</title>
+<style>
+:root {
+  --primary: #1F3864;
+  --secondary: #2E74B5;
+  --accent: #9732FC;
+  --border: #BFBFBF;
+  --bg-code: #F5F5F5;
+  --bg-good: #E2EFDA;
+  --bg-warn: #FFF2CC;
+  --bg-bad: #FCE4D6;
+  --bg-critical: #F8CBAD;
+  --bg-muted: #E7E6E6;
+  --text: #222;
+  --muted: #555;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: 'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR','Helvetica Neue',Arial,sans-serif;
+  color: var(--text);
+  line-height: 1.65;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+  background: #fff;
+}
+h1 { font-size: 28px; color: var(--primary); border-bottom: 3px solid var(--primary); padding-bottom: 8px; margin-top: 0; }
+h2 { font-size: 22px; color: var(--primary); margin-top: 36px; border-left: 5px solid var(--secondary); padding-left: 10px; }
+h3 { font-size: 18px; color: var(--secondary); margin-top: 24px; }
+h4 { font-size: 16px; color: var(--text); margin-top: 18px; }
+p { margin: 10px 0; }
+ul, ol { padding-left: 22px; }
+li { margin: 6px 0; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+th { background: var(--bg-muted); font-weight: 700; }
+tr.good td { background: var(--bg-good); }
+tr.warn td { background: var(--bg-warn); }
+tr.bad td { background: var(--bg-bad); }
+tr.critical td { background: var(--bg-critical); }
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+}
+.badge.good { background: #70AD47; }
+.badge.warn { background: #ED7D31; color: #fff; }
+.badge.bad  { background: #C00000; }
+.badge.critical { background: #833C0C; }
+.badge.muted { background: #7F7F7F; }
+.summary-box {
+  background: var(--bg-muted);
+  border-left: 5px solid var(--secondary);
+  padding: 14px 18px;
+  margin: 12px 0 24px;
+  border-radius: 4px;
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+.meta b { color: var(--text); }
+.back {
+  display: inline-block;
+  margin-bottom: 20px;
+  color: var(--secondary);
+  text-decoration: none;
+  font-size: 14px;
+}
+.back::before { content: '← '; }
+.toc { background: #f7f9fc; padding: 14px 20px; border-radius: 6px; border: 1px solid #e0e5ec; margin: 18px 0 26px; }
+.toc ul { margin: 0; padding-left: 20px; }
+.toc a { color: var(--secondary); text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+.bug {
+  border-left: 5px solid #ED7D31;
+  padding: 12px 16px;
+  margin: 14px 0;
+  background: #FFFBF5;
+  border-radius: 4px;
+}
+.bug.critical { border-color: #833C0C; background: #FBEDE3; }
+.bug.warning { border-color: #ED7D31; background: #FFFBF5; }
+.bug.improvement { border-color: #7F7F7F; background: #F8F8F8; }
+.bug h4 { margin: 0 0 6px; }
+.bug .fix { margin-top: 6px; font-size: 14px; color: var(--muted); }
+.bug .fix b { color: #70AD47; }
+@media print {
+  body { max-width: none; padding: 20px; }
+  a { color: var(--text); text-decoration: none; }
+  .back { display: none; }
+}
+</style>
+</head>
+<body>
+<a href="./index.html" class="back">전체 목록으로 돌아가기</a>
+
+<h1>무료체험 결석자 재신청 (TrialRebooking)</h1>
+<div class="meta">
+  <span><b>카테고리:</b> 체험</span>
+  <span><b>적용 범위:</b> 전체</span>
+  <span><b>대상:</b> 무료체험 최초 1회 결석자 (연속 2회 제외)</span>
+  <span><b>데이터:</b> 결석 수업 정보 + 추천 슬롯 4개</span>
+</div>
+
+<div class="summary-box">
+  <b>개요:</b> 첫 결석 회원의 빠른 재신청 유도 팝업<br/>
+  무료체험 1회 결석자에게 원래 신청 시간 기반 슬롯 추천 팝업을 노출합니다. 2회 연속 결석자는 제외하며, "오늘 그만 보기" / "X 닫기" 2가지 닫기 정책을 사용합니다.
+</div>
+
+<div class="toc">
+  <b>목차</b>
+  <ul>
+    <li><a href="#features">1. 주요 기능</a></li>
+    <li><a href="#data-model">2. 데이터 모델</a></li>
+    <li><a href="#cross-ref">3. 크로스레퍼런스 (저장소별 구현 상태)</a></li>
+    <li><a href="#bugs">4. 발견된 이슈</a></li>
+    <li><a href="#test-cases">5. 테스트 케이스</a></li>
+    <li><a href="#roadmap">6. 권장 로드맵</a></li>
+  </ul>
+</div>
+
+<h2 id="features">1. 주요 기능</h2>
+<ul>
+<li>Bottom Sheet 팝업 + 닫기 2종(오늘 그만 보기 / X)</li>
+<li>슬롯 4개 추천 (전화/화상 + 10/20분 유지)</li>
+<li>알고리즘: 원래 시간 → 인접 시간(+10→-10→+20→-20) → 내일로 전환</li>
+<li>"추천" 배지 (원래 또는 인접 시간)</li>
+<li>컨펌 팝업 (다시 선택 / 확인)</li>
+</ul>
+
+<h2 id="data-model">2. 데이터 모델</h2>
+<table>
+  <thead><tr><th>필드</th><th>설명</th></tr></thead>
+  <tbody>
+    <tr><td><code>TimeSlot</code></td><td>id, time, tag?(recommend)</td></tr>
+<tr><td><code>TrialRebookingData</code></td><td>badgeText, title, subtitle, recommendedTimes[], confirmGuidance</td></tr>
+  </tbody>
+</table>
+
+<h2 id="cross-ref">3. 크로스레퍼런스 — 저장소별 구현 상태</h2>
+<p>프로토타입의 기획을 기준으로, 실제 저장소에 해당 기능이 구현되어 있는지 조사한 결과입니다.</p>
+<table>
+  <thead><tr><th>저장소</th><th>상태</th><th>비고</th></tr></thead>
+  <tbody>
+    <tr><td><b>Uphone3_front</b></td><td><span class="badge warn">부분</span></td><td>src/store/schedule/scheduleStore.ts — findAbsenceEventMember() 있음</td></tr>
+<tr><td><b>uphone3_web</b></td><td><span class="badge bad">없음</span></td><td></td></tr>
+<tr><td><b>uphone3_api</b></td><td><span class="badge warn">부분</span></td><td>결석/슬롯 API 필요</td></tr>
+<tr><td><b>uphone3_lms</b></td><td><span class="badge warn">부분</span></td><td>결석 시간대/수업 형태 정보 원천</td></tr>
+<tr><td><b>Uphone3_android</b></td><td><span class="badge bad">없음</span></td><td>WebView</td></tr>
+<tr><td><b>uphone3_iOS</b></td><td><span class="badge bad">없음</span></td><td>WebView</td></tr>
+  </tbody>
+</table>
+
+<h2 id="bugs">4. 발견된 이슈</h2>
+
+    <div class="bug critical">
+      <h4><span class="badge critical">CRITICAL</span> 슬롯 추천 알고리즘 프론트 구현 — 백엔드 계산 권장</h4>
+      <p>Step 1~5 알고리즘이 프론트에서 실행되면 타이밍/정확도 문제. DB 쿼리가 필요.</p>
+      <p class="fix"><b>권장 수정:</b> POST /trial/rebooking/slots 에서 서버가 4개 슬롯을 반환하도록.</p>
+    </div>
+
+    <div class="bug warning">
+      <h4><span class="badge warn">WARNING</span> "오늘 그만 보기" 24시간 기준 모호</h4>
+      <p>자정(00:00)인지 24시간 후인지 타임존 이슈.</p>
+      <p class="fix"><b>권장 수정:</b> 자정(KST/JST) 기준으로 확정 + expireAt을 서버가 내려줌.</p>
+    </div>
+
+    <div class="bug improvement">
+      <h4><span class="badge muted">IMPROVEMENT</span> [다른 시간 보기] 확장 후 슬롯 개수 미정</h4>
+      <p>스크롤 전략/페이징 규칙 부재.</p>
+      <p class="fix"><b>권장 수정:</b> 하루 20개 슬롯까지 가상 스크롤로 렌더.</p>
+    </div>
+
+<h2 id="test-cases">5. 테스트 케이스</h2>
+<table>
+  <thead><tr><th>ID</th><th>케이스</th><th>기대 결과</th></tr></thead>
+  <tbody>
+    <tr><td><b>TC-01</b></td><td>결석 후 앱 진입</td><td>팝업 노출, "재도전" 배지</td></tr>
+<tr><td><b>TC-02</b></td><td>[오늘 그만 보기]</td><td>당일 재노출 방지, 익일 1회 재노출</td></tr>
+<tr><td><b>TC-03</b></td><td>11:10 결석 슬롯 가용</td><td>11:10 슬롯에 "추천" 배지</td></tr>
+<tr><td><b>TC-04</b></td><td>원래 시간 마감 → 인접 시간</td><td>+10→-10 순차 탐색, "추천" 유지</td></tr>
+<tr><td><b>TC-05</b></td><td>컨펌 [다시 선택하기]</td><td>시간 선택 팝업으로 복귀 + 선택 초기화</td></tr>
+  </tbody>
+</table>
+
+<h2 id="roadmap">6. 권장 로드맵</h2>
+<table>
+  <thead><tr><th>단계</th><th>작업</th></tr></thead>
+  <tbody>
+    <tr><td><b>1주차</b></td><td>슬롯 계산 백엔드 이관 API 스펙 확정</td></tr>
+<tr><td><b>2주차</b></td><td>자정 기준 expire 로직 정리</td></tr>
+<tr><td><b>3주차</b></td><td>KPI(재신청 전환율) 대시보드</td></tr>
+  </tbody>
+</table>
+
+<p style="margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:10px">
+문서 버전: v1 · 생성일: 2026-04-23 · Claude 자동 생성
+</p>
+</body>
+</html>

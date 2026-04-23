@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Uphone Prototypes — 풀스택 QA 리포트 모음</title>
+<style>
+
+:root {
+  --primary: #1F3864;
+  --secondary: #2E74B5;
+  --accent: #9732FC;
+  --border: #BFBFBF;
+  --bg-code: #F5F5F5;
+  --bg-good: #E2EFDA;
+  --bg-warn: #FFF2CC;
+  --bg-bad: #FCE4D6;
+  --bg-critical: #F8CBAD;
+  --bg-muted: #E7E6E6;
+  --text: #222;
+  --muted: #555;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: 'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR','Helvetica Neue',Arial,sans-serif;
+  color: var(--text);
+  line-height: 1.65;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+  background: #fff;
+}
+h1 { font-size: 28px; color: var(--primary); border-bottom: 3px solid var(--primary); padding-bottom: 8px; margin-top: 0; }
+h2 { font-size: 22px; color: var(--primary); margin-top: 36px; border-left: 5px solid var(--secondary); padding-left: 10px; }
+h3 { font-size: 18px; color: var(--secondary); margin-top: 24px; }
+h4 { font-size: 16px; color: var(--text); margin-top: 18px; }
+p { margin: 10px 0; }
+ul, ol { padding-left: 22px; }
+li { margin: 6px 0; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+th { background: var(--bg-muted); font-weight: 700; }
+tr.good td { background: var(--bg-good); }
+tr.warn td { background: var(--bg-warn); }
+tr.bad td { background: var(--bg-bad); }
+tr.critical td { background: var(--bg-critical); }
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+}
+.badge.good { background: #70AD47; }
+.badge.warn { background: #ED7D31; color: #fff; }
+.badge.bad  { background: #C00000; }
+.badge.critical { background: #833C0C; }
+.badge.muted { background: #7F7F7F; }
+.summary-box {
+  background: var(--bg-muted);
+  border-left: 5px solid var(--secondary);
+  padding: 14px 18px;
+  margin: 12px 0 24px;
+  border-radius: 4px;
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+.meta b { color: var(--text); }
+.back {
+  display: inline-block;
+  margin-bottom: 20px;
+  color: var(--secondary);
+  text-decoration: none;
+  font-size: 14px;
+}
+.back::before { content: '← '; }
+.toc { background: #f7f9fc; padding: 14px 20px; border-radius: 6px; border: 1px solid #e0e5ec; margin: 18px 0 26px; }
+.toc ul { margin: 0; padding-left: 20px; }
+.toc a { color: var(--secondary); text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+.bug {
+  border-left: 5px solid #ED7D31;
+  padding: 12px 16px;
+  margin: 14px 0;
+  background: #FFFBF5;
+  border-radius: 4px;
+}
+.bug.critical { border-color: #833C0C; background: #FBEDE3; }
+.bug.warning { border-color: #ED7D31; background: #FFFBF5; }
+.bug.improvement { border-color: #7F7F7F; background: #F8F8F8; }
+.bug h4 { margin: 0 0 6px; }
+.bug .fix { margin-top: 6px; font-size: 14px; color: var(--muted); }
+.bug .fix b { color: #70AD47; }
+@media print {
+  body { max-width: none; padding: 20px; }
+  a { color: var(--text); text-decoration: none; }
+  .back { display: none; }
+}
+
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; margin-top: 20px; }
+.card {
+  display: block;
+  border: 1px solid #e0e5ec;
+  border-radius: 8px;
+  padding: 16px 18px;
+  text-decoration: none;
+  color: var(--text);
+  background: #fff;
+  transition: box-shadow .15s, transform .15s;
+}
+.card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.08); transform: translateY(-2px); border-color: var(--secondary); }
+.card h3 { margin: 6px 0 8px; color: var(--primary); font-size: 16px; }
+.card p { margin: 0 0 10px; color: var(--muted); font-size: 13px; min-height: 34px; }
+.card-cat {
+  display: inline-block;
+  background: var(--bg-muted);
+  color: var(--muted);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.stats { display: flex; gap: 6px; flex-wrap: wrap; }
+.stat { font-size: 11px; padding: 2px 7px; border-radius: 8px; font-weight: 700; color: #fff; }
+.stat.critical { background: #833C0C; }
+.stat.warn { background: #ED7D31; }
+.stat.warnY { background: #FFC000; color: #222; }
+.stat.muted { background: #7F7F7F; }
+.stat.good { background: #70AD47; }
+.legend { background: #f7f9fc; padding: 10px 16px; border-radius: 6px; font-size: 13px; color: var(--muted); margin-top: 14px; }
+.legend code { background: #fff; padding: 2px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<h1>Uphone Prototypes — 풀스택 QA 리포트</h1>
+<div class="summary-box">
+  <b>총 15개 프로토타입</b>에 대한 풀스택 QA 결과입니다.<br/>
+  각 프로토타입마다 프로토타입 코드와 실제 저장소(Uphone3_front / uphone3_web / uphone3_api / uphone3_lms / Uphone3_android / uphone3_iOS) 코드를 교차 검토하여 구현 상태·이슈·테스트 케이스·로드맵을 정리했습니다.
+</div>
+
+<div class="legend">
+  <b>카드 범례:</b>
+  <span class="stat critical">C n</span> Critical 이슈 수 ·
+  <span class="stat warn">W n</span> Warning ·
+  <span class="stat muted">I n</span> Improvement ·
+  <span class="stat good">✓ n</span> 완전 구현 저장소 수 ·
+  <span class="stat warnY">◐ n</span> 부분 구현 저장소 수
+</div>
+
+<h2>프로토타입 목록</h2>
+<div class="card-grid">
+  
+    <a class="card" href="./AttendanceReport.html">
+      <div class="card-cat">리포트</div>
+      <h3>목표 달성 현황 & 리워드 (AttendanceReport)</h3>
+      <p>주간 목표 달성 시 리워드 지급, 연간 스네이크 로드 시각화 + LearningReport + RewardClaim</p>
+      <div class="stats">
+        <span class="stat critical">풀 QA 완료</span>
+      </div>
+    </a>
+  
+      <a class="card" href="./BenefitTimer.html">
+        <div class="card-cat">홈/배너</div>
+        <h3>혜택 마감 타이머 (BenefitTimer)</h3>
+        <p>앱 배너 내 쿠폰/적립금 마감 카운트다운 타이머</p>
+        <div class="stats">
+          <span class="stat critical" title="Critical">C 1</span>
+          <span class="stat warn" title="Warning">W 1</span>
+          <span class="stat muted" title="Improvement">I 1</span>
+          <span class="stat good" title="구현됨">✓ 0</span>
+          <span class="stat warnY" title="부분 구현">◐ 1</span>
+        </div>
+      </a>
+
+      <a class="card" href="./CancelRebookUX.html">
+        <div class="card-cat">스케줄</div>
+        <h3>취소 후 재예약 유도 (CancelRebookUX)</h3>
+        <p>정규 수업 취소 직후 보강 예약을 유도하는 모달</p>
+        <div class="stats">
+          <span class="stat critical" title="Critical">C 1</span>
+          <span class="stat warn" title="Warning">W 1</span>
+          <span class="stat muted" title="Improvement">I 1</span>
+          <span class="stat good" title="구현됨">✓ 0</span>
+          <span class="stat warnY" title="부분 구현">◐ 3</span>
+        </div>
+      </a>
+
+      <a class="card" href="./ChangeProduct.html">
+        <div class="card-cat">결제</div>
+        <h3>상품 변경 (ChangeProduct)</h3>
+        <p>환불 후 재결제를 하나의 화면에서 처리하는 흐름</p>
+        <div class="stats">
+          <span class="stat critical" title="Critical">C 1</span>
+          <span class="stat warn" title="Warning">W 1</span>
+          <span class="stat muted" title="Improvement">I 1</span>
+          <span class="stat good" title="구현됨">✓ 0</span>
+          <span class="stat warnY" title="부분 구현">◐ 2</span>
+        </div>
+      </a>
+
+      <a class="card" href="./FLReport.html">
+        <div class="card-cat">리포트</div>
+        <h3>FL 리포트 v1 (FLReport)</h3>
+        <p>1:1 수업 후 AI 상담 연계 9단계 인터랙티브 리포트</p>
+        <div class="stats">
+          <span class="stat critical" title="Critical">C 1</span>
+          <span class="stat warn" title="Warning">W 1</span>
+          <span class="stat muted" title="Improvement">I 1</span>
+          <span class="stat good" title="구현됨">✓ 0</span>
+          <span class="stat warnY" title="부분 구현">◐ 1</span>
+        </div>
+      </a>
+
+      <a class="card" href="./FLReport2.html">
+        <div class="card-cat">리포트</div>
+        <h3>FL 리포트 v2 (FLReport2)</h3>
+        <p>스크롤 기반 네비게이션 + AI 입력 슬롯화 고도화</p>
+        <div class="stats">
+          <span class="stat critical" title="Critical">C 1</span>
+          <span class="stat warn" title="Warning">W 1</span>
+          <span class="stat muted" title="Improvement">I 1</span>
+          <span class="stat good" title="구현됨">✓ 0</span>
+          <span class="stat warnY" title="부분 구현">◐ 0</span>
+        </div>
+      </a>
+
+      <a class="card" href="./FLReport3.html">
+        <div class="card-cat">리포트</div>
+        <h3>FL 리포트 v3 (FLReport3)</h3>
+        <p>오각형 차트 + 레벨 성장 예측 로직 강화 버전</p>
+        <div class="stats">
+          <span class="stat critical" title="Critical">C 0</span>
+          <span class="stat warn" title="Warning">W 1</span>
+          <span class="stat muted" title="Improvement">I 2</span>
+          <span class="stat good" title="구현됨">✓ 0</span>
+          <span class="stat warnY" title="부분 구현">◐ 2</span>
+        </div>
+      </a>
+
+      <a class="card" href="./LessonUxData.html">
+        <div class="card-cat">수업</div>
+        <h3>수업 평가 팝업 (LessonUxData)</h3>
+        <p>수업 종료 후 강사/교재/환경 설문 수집</p>
+        <div class="stats">
+          <span class="stat critical" title="Critical">C 1</span>
+          <span class="stat warn" title="Warning">W 1</span>
+          <span class="stat muted" title="Improvement">I 1</span>
+          <span class="stat good" title="구현됨">✓ 0</span>
+          <span class="stat warnY" title="부분 구현">◐ 3</span>
+        </div>
+      </a>
+
+      <a class="card" href="./NewTrialReport.html">
+        <div class="card-cat">리포트</div>
+        <h3>무료체험 AI 리포트 (NewTrialReport)</h3>
+        <p>수업 완료 후 종합 AI 분석 리포트</p>
+        <div class="stats">
+          <span class="stat critical" title="Critical">C 1</span>
+          <span class="stat warn" title="Warning">W 1</span>
+          <span class="stat muted" title="Improvement">I 1</span>
+          <span class="stat good" title="구현됨">✓ 0</span>
+          <span class="stat warnY" title="부분 구현">◐ 3</span>
+        </div>
+      </a>
+
+      <a class="card" href="./PhoneLessonHome.html">
+        <div class="card-cat">홈</div>
+        <h3>전화영어 홈 대시보드 (PhoneLessonHome)</h3>
+        <p>활성 수강자의 메인 홈</p>
+        <div class="stats">
+          <span class="stat critical" title="Critical">C 0</span>
+          <span class="stat warn" title="Warning">W 1</span>
+          <span class="stat muted" title="Improvement">I 2</span>
+          <span class="stat good" title="구현됨">✓ 0</span>
+          <span class="stat warnY" title="부분 구현">◐ 3</span>
+        </div>
+      </a>
+
+      <a class="card" href="./TrialRebooking.html">
+        <div class="card-cat">체험</div>
+        <h3>무료체험 결석자 재신청 (TrialRebooking)</h3>
+        <p>첫 결석 회원의 빠른 재신청 유도 팝업</p>
+        <div class="stats">
+          <span class="stat critical" title="Critical">C 1</span>
+          <span class="stat warn" title="Warning">W 1</span>
+          <span class="stat muted" title="Improvement">I 1</span>
+          <span class="stat good" title="구현됨">✓ 0</span>
+          <span class="stat warnY" title="부분 구현">◐ 3</span>
+        </div>
+      </a>
+
+      <a class="card" href="./TrialSmartWaiting.html">
+        <div class="card-cat">체험</div>
+        <h3>무료체험 스마트 대기실 (TrialSmartWaiting)</h3>
+        <p>신청~수업 시작까지 5단계 위자드 경험</p>
+        <div class="stats">
+          <span class="stat critical" title="Critical">C 0</span>
+          <span class="stat warn" title="Warning">W 1</span>
+          <span class="stat muted" title="Improvement">I 2</span>
+          <span class="stat good" title="구현됨">✓ 0</span>
+          <span class="stat warnY" title="부분 구현">◐ 2</span>
+        </div>
+      </a>
+
+      <a class="card" href="./UserProfileData.html">
+        <div class="card-cat">내 정보</div>
+        <h3>통합 프로필 설정 (UserProfileData)</h3>
+        <p>흩어져 있던 프로필 필드를 하나의 화면에 통합</p>
+        <div class="stats">
+          <span class="stat critical" title="Critical">C 1</span>
+          <span class="stat warn" title="Warning">W 1</span>
+          <span class="stat muted" title="Improvement">I 1</span>
+          <span class="stat good" title="구현됨">✓ 0</span>
+          <span class="stat warnY" title="부분 구현">◐ 1</span>
+        </div>
+      </a>
+
+      <a class="card" href="./WebSelfstudyAzure.html">
+        <div class="card-cat">학습</div>
+        <h3>웹 스스로학습 Azure 발음평가 (WebSelfstudyAzure)</h3>
+        <p>Azure 기반 발음 점수 + 4메트릭 시각 피드백</p>
+        <div class="stats">
+          <span class="stat critical" title="Critical">C 1</span>
+          <span class="stat warn" title="Warning">W 1</span>
+          <span class="stat muted" title="Improvement">I 1</span>
+          <span class="stat good" title="구현됨">✓ 0</span>
+          <span class="stat warnY" title="부분 구현">◐ 1</span>
+        </div>
+      </a>
+
+      <a class="card" href="./B2B2CSignUp.html">
+        <div class="card-cat">가입</div>
+        <h3>B2B2C 회원가입 (B2B2CSignUp)</h3>
+        <p>제휴코드 기반 가입 경로 강화 + 소셜 로그인</p>
+        <div class="stats">
+          <span class="stat critical" title="Critical">C 1</span>
+          <span class="stat warn" title="Warning">W 1</span>
+          <span class="stat muted" title="Improvement">I 1</span>
+          <span class="stat good" title="구현됨">✓ 0</span>
+          <span class="stat warnY" title="부분 구현">◐ 3</span>
+        </div>
+      </a>
+</div>
+
+<p style="margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:10px">
+v1 · 2026-04-23 · Claude 자동 생성 · 총 15개 리포트
+</p>
+</body>
+</html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>혜택 마감 타이머 (BenefitTimer) — 풀스택 QA 리포트</title>
+<style>
+:root {
+  --primary: #1F3864;
+  --secondary: #2E74B5;
+  --accent: #9732FC;
+  --border: #BFBFBF;
+  --bg-code: #F5F5F5;
+  --bg-good: #E2EFDA;
+  --bg-warn: #FFF2CC;
+  --bg-bad: #FCE4D6;
+  --bg-critical: #F8CBAD;
+  --bg-muted: #E7E6E6;
+  --text: #222;
+  --muted: #555;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: 'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR','Helvetica Neue',Arial,sans-serif;
+  color: var(--text);
+  line-height: 1.65;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+  background: #fff;
+}
+h1 { font-size: 28px; color: var(--primary); border-bottom: 3px solid var(--primary); padding-bottom: 8px; margin-top: 0; }
+h2 { font-size: 22px; color: var(--primary); margin-top: 36px; border-left: 5px solid var(--secondary); padding-left: 10px; }
+h3 { font-size: 18px; color: var(--secondary); margin-top: 24px; }
+h4 { font-size: 16px; color: var(--text); margin-top: 18px; }
+p { margin: 10px 0; }
+ul, ol { padding-left: 22px; }
+li { margin: 6px 0; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+th { background: var(--bg-muted); font-weight: 700; }
+tr.good td { background: var(--bg-good); }
+tr.warn td { background: var(--bg-warn); }
+tr.bad td { background: var(--bg-bad); }
+tr.critical td { background: var(--bg-critical); }
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+}
+.badge.good { background: #70AD47; }
+.badge.warn { background: #ED7D31; color: #fff; }
+.badge.bad  { background: #C00000; }
+.badge.critical { background: #833C0C; }
+.badge.muted { background: #7F7F7F; }
+.summary-box {
+  background: var(--bg-muted);
+  border-left: 5px solid var(--secondary);
+  padding: 14px 18px;
+  margin: 12px 0 24px;
+  border-radius: 4px;
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+.meta b { color: var(--text); }
+.back {
+  display: inline-block;
+  margin-bottom: 20px;
+  color: var(--secondary);
+  text-decoration: none;
+  font-size: 14px;
+}
+.back::before { content: '← '; }
+.toc { background: #f7f9fc; padding: 14px 20px; border-radius: 6px; border: 1px solid #e0e5ec; margin: 18px 0 26px; }
+.toc ul { margin: 0; padding-left: 20px; }
+.toc a { color: var(--secondary); text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+.bug {
+  border-left: 5px solid #ED7D31;
+  padding: 12px 16px;
+  margin: 14px 0;
+  background: #FFFBF5;
+  border-radius: 4px;
+}
+.bug.critical { border-color: #833C0C; background: #FBEDE3; }
+.bug.warning { border-color: #ED7D31; background: #FFFBF5; }
+.bug.improvement { border-color: #7F7F7F; background: #F8F8F8; }
+.bug h4 { margin: 0 0 6px; }
+.bug .fix { margin-top: 6px; font-size: 14px; color: var(--muted); }
+.bug .fix b { color: #70AD47; }
+@media print {
+  body { max-width: none; padding: 20px; }
+  a { color: var(--text); text-decoration: none; }
+  .back { display: none; }
+}
+</style>
+</head>
+<body>
+<a href="./index.html" class="back">전체 목록으로 돌아가기</a>
+
+<h1>혜택 마감 타이머 (BenefitTimer)</h1>
+<div class="meta">
+  <span><b>카테고리:</b> 홈/배너</span>
+  <span><b>적용 범위:</b> 한국·일본 (타임존 기반)</span>
+  <span><b>대상:</b> B2C / B2B2C (개인결제·재수강 등 7가지 배너 케이스)</span>
+  <span><b>데이터:</b> 배너 데이터 + 쿠폰/적립금 만료 시각</span>
+</div>
+
+<div class="summary-box">
+  <b>개요:</b> 앱 배너 내 쿠폰/적립금 마감 카운트다운 타이머<br/>
+  배너 영역에 쿠폰·적립금 등 혜택의 만료 시점을 4단계(MM:SS / HH:MM:SS / 오늘까지 / M/D까지)로 표시해 긴박감을 부여하는 컴포넌트입니다.
+</div>
+
+<div class="toc">
+  <b>목차</b>
+  <ul>
+    <li><a href="#features">1. 주요 기능</a></li>
+    <li><a href="#data-model">2. 데이터 모델</a></li>
+    <li><a href="#cross-ref">3. 크로스레퍼런스 (저장소별 구현 상태)</a></li>
+    <li><a href="#bugs">4. 발견된 이슈</a></li>
+    <li><a href="#test-cases">5. 테스트 케이스</a></li>
+    <li><a href="#roadmap">6. 권장 로드맵</a></li>
+  </ul>
+</div>
+
+<h2 id="features">1. 주요 기능</h2>
+<ul>
+<li>만료 시각까지 남은 시간에 따른 4단계 표시</li>
+<li>혜택 미보유 시 타이머 자동 숨김(null 반환)</li>
+<li>배너 타입별 (new-custom / new-trial / renewal) 노출 정책</li>
+<li>한국·일본 타임존 기반 시각 계산</li>
+</ul>
+
+<h2 id="data-model">2. 데이터 모델</h2>
+<table>
+  <thead><tr><th>필드</th><th>설명</th></tr></thead>
+  <tbody>
+    <tr><td><code>BannerType</code></td><td>new-custom / new-trial / renewal 등 7가지</td></tr>
+<tr><td><code>hasCoupon / hasReward</code></td><td>보유 여부 — 둘 다 false면 렌더 안 함</td></tr>
+<tr><td><code>expiresAt</code></td><td>만료 시각 (ISO / epoch)</td></tr>
+<tr><td><code>discountRate</code></td><td>할인율 (쿠폰)</td></tr>
+<tr><td><code>rewardAmount</code></td><td>적립금 금액</td></tr>
+  </tbody>
+</table>
+
+<h2 id="cross-ref">3. 크로스레퍼런스 — 저장소별 구현 상태</h2>
+<p>프로토타입의 기획을 기준으로, 실제 저장소에 해당 기능이 구현되어 있는지 조사한 결과입니다.</p>
+<table>
+  <thead><tr><th>저장소</th><th>상태</th><th>비고</th></tr></thead>
+  <tbody>
+    <tr><td><b>Uphone3_front</b></td><td><span class="badge bad">없음</span></td><td>신규 컴포넌트 — 아직 구현 없음</td></tr>
+<tr><td><b>uphone3_web</b></td><td><span class="badge bad">없음</span></td><td>신규 기능 — 구현 필요</td></tr>
+<tr><td><b>uphone3_api</b></td><td><span class="badge warn">부분</span></td><td>/api/banner/list, PurchaseService 에 만료 계산 로직 일부</td></tr>
+<tr><td><b>uphone3_lms</b></td><td><span class="badge bad">없음</span></td><td>관리자 화면 필요</td></tr>
+<tr><td><b>Uphone3_android</b></td><td><span class="badge bad">없음</span></td><td>WebView 래핑만 — 별도 구현 없음</td></tr>
+<tr><td><b>uphone3_iOS</b></td><td><span class="badge bad">없음</span></td><td>WebView 래핑만</td></tr>
+  </tbody>
+</table>
+
+<h2 id="bugs">4. 발견된 이슈</h2>
+
+    <div class="bug critical">
+      <h4><span class="badge critical">CRITICAL</span> Date.now() 클라이언트 시간 기준 — 서버 시간 불일치 위험</h4>
+      <p>사용자 기기 시간이 틀리면 타이머 값이 잘못 표시되고, 만료 안 됐는데 혜택이 만료된 것처럼 보일 수 있습니다.</p>
+      <p class="fix"><b>권장 수정:</b> expiresAt 비교 시 서버 응답의 Date 헤더 또는 /api/time 같은 서버 시각 엔드포인트로 오프셋을 보정하세요.</p>
+    </div>
+
+    <div class="bug warning">
+      <h4><span class="badge warn">WARNING</span> 만료 이후 null 반환 → 빈 공간 노출</h4>
+      <p>타이머가 사라지면 배너 높이가 줄어 레이아웃이 흔들립니다.</p>
+      <p class="fix"><b>권장 수정:</b> 만료 후 "혜택 종료" placeholder 또는 다음 배너로 전환되도록 fallback 렌더링을 넣으세요.</p>
+    </div>
+
+    <div class="bug improvement">
+      <h4><span class="badge muted">IMPROVEMENT</span> 타이머 state 클래스명 일관성 (short/long/tomorrow/far)</h4>
+      <p>SCSS/Tailwind 클래스가 단계별로 통일되지 않아 스타일 충돌 가능.</p>
+      <p class="fix"><b>권장 수정:</b> 상태 enum(urgent / today / tomorrow / future)으로 네이밍 통일.</p>
+    </div>
+
+<h2 id="test-cases">5. 테스트 케이스</h2>
+<table>
+  <thead><tr><th>ID</th><th>케이스</th><th>기대 결과</th></tr></thead>
+  <tbody>
+    <tr><td><b>TC-01</b></td><td>쿠폰·적립금 모두 미보유</td><td>타이머 영역 자체 렌더링 안 됨</td></tr>
+<tr><td><b>TC-02</b></td><td>만료까지 59분 남음</td><td>MM:SS 형식 + 긴박감 강조 스타일</td></tr>
+<tr><td><b>TC-03</b></td><td>만료까지 25시간 남음</td><td>"오늘까지" 또는 "HH:MM:SS" 표기 정책 확인</td></tr>
+<tr><td><b>TC-04</b></td><td>만료까지 3일 남음</td><td>"M/D까지" 정적 표기</td></tr>
+<tr><td><b>TC-05</b></td><td>한국/일본 외 타임존</td><td>컴포넌트 미노출</td></tr>
+<tr><td><b>TC-06</b></td><td>만료 직후 1분 경과</td><td>fallback UI 또는 다음 배너 전환</td></tr>
+  </tbody>
+</table>
+
+<h2 id="roadmap">6. 권장 로드맵</h2>
+<table>
+  <thead><tr><th>단계</th><th>작업</th></tr></thead>
+  <tbody>
+    <tr><td><b>1주차</b></td><td>API 서버 시각 동기화(/api/time) + 서버 기준 타이머 로직 수정</td></tr>
+<tr><td><b>2주차</b></td><td>만료 후 fallback UI 설계, LMS 배너 관리 화면</td></tr>
+<tr><td><b>3주차</b></td><td>E2E 타임존/타이머 QA 및 A/B 테스트 기반 전환율 측정</td></tr>
+  </tbody>
+</table>
+
+<p style="margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:10px">
+문서 버전: v1 · 생성일: 2026-04-23 · Claude 자동 생성
+</p>
+</body>
+</html>

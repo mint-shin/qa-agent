@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>취소 후 재예약 유도 (CancelRebookUX) — 풀스택 QA 리포트</title>
+<style>
+:root {
+  --primary: #1F3864;
+  --secondary: #2E74B5;
+  --accent: #9732FC;
+  --border: #BFBFBF;
+  --bg-code: #F5F5F5;
+  --bg-good: #E2EFDA;
+  --bg-warn: #FFF2CC;
+  --bg-bad: #FCE4D6;
+  --bg-critical: #F8CBAD;
+  --bg-muted: #E7E6E6;
+  --text: #222;
+  --muted: #555;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: 'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR','Helvetica Neue',Arial,sans-serif;
+  color: var(--text);
+  line-height: 1.65;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+  background: #fff;
+}
+h1 { font-size: 28px; color: var(--primary); border-bottom: 3px solid var(--primary); padding-bottom: 8px; margin-top: 0; }
+h2 { font-size: 22px; color: var(--primary); margin-top: 36px; border-left: 5px solid var(--secondary); padding-left: 10px; }
+h3 { font-size: 18px; color: var(--secondary); margin-top: 24px; }
+h4 { font-size: 16px; color: var(--text); margin-top: 18px; }
+p { margin: 10px 0; }
+ul, ol { padding-left: 22px; }
+li { margin: 6px 0; }
+table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+th { background: var(--bg-muted); font-weight: 700; }
+tr.good td { background: var(--bg-good); }
+tr.warn td { background: var(--bg-warn); }
+tr.bad td { background: var(--bg-bad); }
+tr.critical td { background: var(--bg-critical); }
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+}
+.badge.good { background: #70AD47; }
+.badge.warn { background: #ED7D31; color: #fff; }
+.badge.bad  { background: #C00000; }
+.badge.critical { background: #833C0C; }
+.badge.muted { background: #7F7F7F; }
+.summary-box {
+  background: var(--bg-muted);
+  border-left: 5px solid var(--secondary);
+  padding: 14px 18px;
+  margin: 12px 0 24px;
+  border-radius: 4px;
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+.meta b { color: var(--text); }
+.back {
+  display: inline-block;
+  margin-bottom: 20px;
+  color: var(--secondary);
+  text-decoration: none;
+  font-size: 14px;
+}
+.back::before { content: '← '; }
+.toc { background: #f7f9fc; padding: 14px 20px; border-radius: 6px; border: 1px solid #e0e5ec; margin: 18px 0 26px; }
+.toc ul { margin: 0; padding-left: 20px; }
+.toc a { color: var(--secondary); text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+.bug {
+  border-left: 5px solid #ED7D31;
+  padding: 12px 16px;
+  margin: 14px 0;
+  background: #FFFBF5;
+  border-radius: 4px;
+}
+.bug.critical { border-color: #833C0C; background: #FBEDE3; }
+.bug.warning { border-color: #ED7D31; background: #FFFBF5; }
+.bug.improvement { border-color: #7F7F7F; background: #F8F8F8; }
+.bug h4 { margin: 0 0 6px; }
+.bug .fix { margin-top: 6px; font-size: 14px; color: var(--muted); }
+.bug .fix b { color: #70AD47; }
+@media print {
+  body { max-width: none; padding: 20px; }
+  a { color: var(--text); text-decoration: none; }
+  .back { display: none; }
+}
+</style>
+</head>
+<body>
+<a href="./index.html" class="back">전체 목록으로 돌아가기</a>
+
+<h1>취소 후 재예약 유도 (CancelRebookUX)</h1>
+<div class="meta">
+  <span><b>카테고리:</b> 스케줄</span>
+  <span><b>적용 범위:</b> 전체</span>
+  <span><b>대상:</b> 정규(유료) 수업 취소자 — 연속 취소 예외</span>
+  <span><b>데이터:</b> 취소 요청 이벤트 + 다음 예약 가능 슬롯</span>
+</div>
+
+<div class="summary-box">
+  <b>개요:</b> 정규 수업 취소 직후 보강 예약을 유도하는 모달<br/>
+  수업 취소가 서버 확정된 직후 "수업 쿠폰 도착" 형태의 모달을 띄워 빠른 보강 예약을 유도합니다. 첫 정규 수업 취소에만 노출되며 반복 노출은 하지 않습니다.
+</div>
+
+<div class="toc">
+  <b>목차</b>
+  <ul>
+    <li><a href="#features">1. 주요 기능</a></li>
+    <li><a href="#data-model">2. 데이터 모델</a></li>
+    <li><a href="#cross-ref">3. 크로스레퍼런스 (저장소별 구현 상태)</a></li>
+    <li><a href="#bugs">4. 발견된 이슈</a></li>
+    <li><a href="#test-cases">5. 테스트 케이스</a></li>
+    <li><a href="#roadmap">6. 권장 로드맵</a></li>
+  </ul>
+</div>
+
+<h2 id="features">1. 주요 기능</h2>
+<ul>
+<li>취소 API 성공 콜백 직후 단 1회 노출</li>
+<li>이미 취소된 다음 수업은 트리거 제외</li>
+<li>CTA "수업 예약하기" → 예약 화면 라우팅</li>
+<li>팝업 이탈/전환/예약완료 3경로 데이터 추적</li>
+</ul>
+
+<h2 id="data-model">2. 데이터 모델</h2>
+<table>
+  <thead><tr><th>필드</th><th>설명</th></tr></thead>
+  <tbody>
+    <tr><td><code>title</code></td><td>팝업 타이틀 (예: "수업 쿠폰이 도착했어요")</td></tr>
+<tr><td><code>imageUrl</code></td><td>쿠폰 이미지 경로 (/assets/CancelRebookUX/coupon_img.png)</td></tr>
+<tr><td><code>confirmText</code></td><td>CTA 버튼 라벨</td></tr>
+  </tbody>
+</table>
+
+<h2 id="cross-ref">3. 크로스레퍼런스 — 저장소별 구현 상태</h2>
+<p>프로토타입의 기획을 기준으로, 실제 저장소에 해당 기능이 구현되어 있는지 조사한 결과입니다.</p>
+<table>
+  <thead><tr><th>저장소</th><th>상태</th><th>비고</th></tr></thead>
+  <tbody>
+    <tr><td><b>Uphone3_front</b></td><td><span class="badge warn">부분</span></td><td>CenterPopup.tsx 모달 구조는 존재</td></tr>
+<tr><td><b>uphone3_web</b></td><td><span class="badge warn">부분</span></td><td>LessonCancel API 연동은 있으나 유도 UI 없음</td></tr>
+<tr><td><b>uphone3_api</b></td><td><span class="badge warn">부분</span></td><td>/lesson/cancel 엔드포인트 + 취소 플래그</td></tr>
+<tr><td><b>uphone3_lms</b></td><td><span class="badge bad">없음</span></td><td>트리거 조건 관리 UI 없음</td></tr>
+<tr><td><b>Uphone3_android</b></td><td><span class="badge bad">없음</span></td><td>WebView 래핑</td></tr>
+<tr><td><b>uphone3_iOS</b></td><td><span class="badge bad">없음</span></td><td>WebView 래핑</td></tr>
+  </tbody>
+</table>
+
+<h2 id="bugs">4. 발견된 이슈</h2>
+
+    <div class="bug critical">
+      <h4><span class="badge critical">CRITICAL</span> 트래킹 TODO 미구현</h4>
+      <p>코드 내 "TODO: 트래킹 → 1) 유도 팝업 이탈" 주석이 남아있어, 효과 측정 자체가 불가능한 상태입니다.</p>
+      <p class="fix"><b>권장 수정:</b> GA4 또는 Amplitude로 popup_impression / popup_dismiss / popup_cta_click 3개 이벤트 발행.</p>
+    </div>
+
+    <div class="bug warning">
+      <h4><span class="badge warn">WARNING</span> imageUrl 로컬 경로 — 프리로드 미적용</h4>
+      <p>모달 진입 순간 이미지 로딩으로 깜빡임(flicker) 발생 가능.</p>
+      <p class="fix"><b>권장 수정:</b> Link rel="preload" 또는 JS Image() 프리로드를 취소 API 호출 시점에 같이 트리거.</p>
+    </div>
+
+    <div class="bug improvement">
+      <h4><span class="badge muted">IMPROVEMENT</span> 닫기 시 라우팅 정책 불명확</h4>
+      <p>팝업 [X] 닫기 시 홈으로 갈지 스케줄 화면을 유지할지 정해지지 않음.</p>
+      <p class="fix"><b>권장 수정:</b> 기본은 현재 화면 유지 + "홈으로" 보조 링크 추가 권장.</p>
+    </div>
+
+<h2 id="test-cases">5. 테스트 케이스</h2>
+<table>
+  <thead><tr><th>ID</th><th>케이스</th><th>기대 결과</th></tr></thead>
+  <tbody>
+    <tr><td><b>TC-01</b></td><td>첫 정규 수업 취소 API 성공</td><td>모달 노출 + CTA 정상 표시</td></tr>
+<tr><td><b>TC-02</b></td><td>이미 취소된 수업 있고 다음 수업도 취소</td><td>모달 미노출</td></tr>
+<tr><td><b>TC-03</b></td><td>CTA 클릭</td><td>예약 화면(/reservation)으로 이동 + 취소 쿠폰 자동 선택</td></tr>
+<tr><td><b>TC-04</b></td><td>[X] 닫기</td><td>현재 스케줄 화면 유지, 재노출 없음</td></tr>
+<tr><td><b>TC-05</b></td><td>트래킹 이벤트 발행</td><td>impression, dismiss, cta_click 3이벤트 확인</td></tr>
+  </tbody>
+</table>
+
+<h2 id="roadmap">6. 권장 로드맵</h2>
+<table>
+  <thead><tr><th>단계</th><th>작업</th></tr></thead>
+  <tbody>
+    <tr><td><b>1주차</b></td><td>트래킹 TODO 해소 + 이미지 프리로드</td></tr>
+<tr><td><b>2주차</b></td><td>반복 노출 제어 쿠키/localStorage 정책 확정</td></tr>
+<tr><td><b>3주차</b></td><td>A/B 테스트로 재예약 전환율 측정</td></tr>
+  </tbody>
+</table>
+
+<p style="margin-top:40px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:10px">
+문서 버전: v1 · 생성일: 2026-04-23 · Claude 자동 생성
+</p>
+</body>
+</html>
